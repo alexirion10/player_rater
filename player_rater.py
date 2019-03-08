@@ -6,36 +6,24 @@ import re
 
 SET_OF_PLAYERS = set()
 
-"""
+'''
  1. Get top 500 player stats
  2. Sum all stats to get a baseline...
  3. Score the value of each stat
  4. score each player
  5. rank!
-"""
+'''
 
-# class PlayerStats:
-    #     name
-    ### hitting ####
-    #     runs
-    #     HR
-    #     TB
-    #     RBI
-    #     SBN
-    #     OPS
-    ### Pitching ###
-    #     K
-    #     QS
-    #     W
-    #     SV
-    #     ERA
-    #     WHIP
 
 def format_name(name):
     name = re.sub('.\'', '', name).strip().lower().replace('jr','')
     return name
 
+
 class Player:
+    '''
+    Holds stats I want for each player!
+    '''
     def __init__(self, json):
         player = json['player']
         self.firstName = format_name(player['FirstName'])
@@ -80,36 +68,36 @@ class Player:
 
     def str(self):
         print(json.dumps(vars(self), indent=4, sort_keys=False))
-        # print(', '.join("{%s: '%s'}" % item for item in vars(self).items()))
+        # print(', '.join('{%s: '%s'}' % item for item in vars(self).items()))
 
 
 def create_player(player_data):
-    """
+    '''
     ToDo: 
       - add player data to pandas data frame?
       - total all stats across all players?
     Param: a JSON blob of the following form and creates a class from it
     {
-        "player": {
-          "ID": "12370",
-          "LastName": "Abreu",
-          "FirstName": "Albert",
-          "Position": "P"
+        'player': {
+          'ID': '12370',
+          'LastName': 'Abreu',
+          'FirstName': 'Albert',
+          'Position': 'P'
         },
-        "team": {
-          "ID": "114",
-          "City": "New York",
-          "Name": "Yankees",
-          "Abbreviation": "NYY"
+        'team': {
+          'ID': '114',
+          'City': 'New York',
+          'Name': 'Yankees',
+          'Abbreviation': 'NYY'
         },
-        "stats": {
-          "GamesPlayed": {
-            "@abbreviation": "G",
-            "#text": "0"
+        'stats': {
+          'GamesPlayed': {
+            '@abbreviation': 'G',
+            '#text': '0'
           },...
         }
     }
-    """
+    '''
     if 'JerseyNumber' not in player_data['player']:
         print('No JerseyNumber ' + player_data['player']['FirstName'] + ' ' + player_data['player']['LastName'])
 
@@ -118,7 +106,6 @@ def create_player(player_data):
         x.str()
     else:
         print('Not in players list: ' + str(x.firstName + ' ' + x.lastName))
-    
 
     
 def read_in_players():
@@ -131,7 +118,7 @@ def api_v2(api_credentials):
     # v2 API. Need to get credentials to work
     # response = requests.get(
     #             url='https://api.mysportsfeeds.com/v2.1/pull/mlb/2018-regular/player_stats_totals.json',
-    #             headers={"Authorization": "Basic " + base64.b64encode('{}:{}'.format(api_credentials['apikey_token'],'MYSPORTSFEEDS').encode('utf-8')).decode('ascii')}
+    #             headers={'Authorization': 'Basic ' + base64.b64encode('{}:{}'.format(api_credentials['apikey_token'],'MYSPORTSFEEDS').encode('utf-8')).decode('ascii')}
     #           )
     # print('Response HTTP Status Code: {status_code}'.format(status_code=response.status_code))
     # return response.json()['playerStatsTotals']
@@ -142,10 +129,10 @@ def api_v1(api_credentials):
     response = requests.get(
                 url='https://api.mysportsfeeds.com/v1.2/pull/mlb/{}-regular/cumulative_player_stats.json'.format('2018'),
                 params={},
-                headers={"Authorization": "Basic " + base64.b64encode('{}:{}'.format(api_credentials['user'], api_credentials['pw']).encode('utf-8')).decode('ascii')}
+                headers={'Authorization': 'Basic ' + base64.b64encode('{}:{}'.format(api_credentials['user'], api_credentials['pw']).encode('utf-8')).decode('ascii')}
               )
     print('Response HTTP Status Code: {status_code}'.format(status_code=response.status_code))
-    return response.json()["cumulativeplayerstats"]['playerstatsentry']
+    return response.json()['cumulativeplayerstats']['playerstatsentry']
 
 
 def main():
@@ -160,8 +147,8 @@ def main():
 
     print(len(list_of_players))
     for i, player_data in enumerate(list_of_players):
-        if i > 20:
-            return
+        # if i > 20:
+        #     return
         create_player(player_data)
 
 
