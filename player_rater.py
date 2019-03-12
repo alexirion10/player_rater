@@ -39,14 +39,14 @@ IPGS_AVG = 4.506244539
 IPGS_STDEV = 5.815211725
 
 # average score by position * -1
-# Use this to give preference to position
+# Use this to give preference to position with low average score
 pos = {
-    'P': -1,
+    'P': -1, #toned down from -1.8
     '1B': -0.72647045,
     '2B': 0.325661814,
     '3B': -0.246818798,
     'SS': 0.039322866,
-    'C': 3,
+    'C': 3, #toned down from 4.5
     'DH': -2.324488633,
     'LF': -0.720238071,
     'RF': -0.720238071,
