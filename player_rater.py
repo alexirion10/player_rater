@@ -5,16 +5,13 @@ import requests
 import json
 import argparse
 import pandas
-import re
-from selenium import webdriver
+# import re
+# from selenium import webdriver
 from bs4 import BeautifulSoup
 
-pitcher = ('SP', 'RP')
-math = ['Mike Trout', 'Chris Sale', 'Mookie Betts', 'Edwin Diaz', 'Jacob deGrom']
+pitcher = ['SP', 'RP']
 
-# AVG, STDEV
-AB_AVG = 446.638796
-AB_STDEV = 108.6588197
+# AVG, STDEV of each category for top 600 players
 R_AVG = 62.24080268
 R_STDEV = 19.76354048
 HR_AVG = 17.34782609
@@ -28,8 +25,6 @@ OBP_STDEV = 0.024914763
 SLG_AVG = 0.437722408
 SLG_STDEV = 0.046053334
 
-IP_AVG = 104.5949833
-IP_STDEV = 50.48724945
 K_AVG = 103.0668896
 K_STDEV = 49.5575952
 W_AVG = 6.2909699
@@ -41,7 +36,22 @@ ERA_STDEV = 0.553831395
 WHIP_AVG = 1.289665552
 WHIP_STDEV = 0.115778175
 IPGS_AVG = 4.506244539
-IPGS_STDEV = 5.815211725 # QS ?
+IPGS_STDEV = 5.815211725
+
+# average score by position * -1
+# Use this to give preference to position
+pos = {
+    'P': -1,
+    '1B': -0.72647045,
+    '2B': 0.325661814,
+    '3B': -0.246818798,
+    'SS': 0.039322866,
+    'C': 3,
+    'DH': -2.324488633,
+    'LF': -0.720238071,
+    'RF': -0.720238071,
+    'CF': -0.720238071
+}
 
 class Player:
     '''
@@ -49,8 +59,8 @@ class Player:
     '''
     def __init__(self, pandas_row):
         self.name = pandas_row['Player']
-        self.team = pandas_row['Team']
-        self.position = pandas_row['Positions'].split(',', 1)[0]
+        self.team = str(pandas_row['Team'])
+        self.position = pandas_row['Positions'].split(',')
         self.score = 0
 
         self.ab = pandas_row['AB']
@@ -73,15 +83,14 @@ class Player:
 
     def compute_score(self):
         self.score = 0
-        if self.position in pitcher:
+        if self.position[0] in pitcher:
             self.score += (self.k - K_AVG)/K_STDEV
             self.score += (self.wins - W_AVG)/W_STDEV
             self.score += (self.saves - SV_AVG)/SV_STDEV
             self.score += -1*(self.era - ERA_AVG)/ERA_STDEV
             self.score += -1*(self.whip - WHIP_AVG)/WHIP_STDEV
-            # self.score *= (6/5)
             self.score += (self.ip_per_gs - IPGS_AVG)/IPGS_STDEV
-            self.score += (self.ip - IP_AVG)/IP_STDEV
+            self.score += pos['P']
         else :
             self.score += (self.r - R_AVG)/R_STDEV
             self.score += (self.hr - HR_AVG)/HR_STDEV
@@ -89,40 +98,54 @@ class Player:
             self.score += (self.sb - SB_AVG)/SB_STDEV
             self.score += (self.obp - OBP_AVG)/OBP_STDEV
             self.score += (self.slg - SLG_AVG)/SLG_STDEV
-            self.score += (self.ab - AB_AVG)/AB_STDEV
-        print(self.name + ',' + self.position + ',' + str(self.score))
+            high_watermark = -999999
+            for spot in self.position:
+                if high_watermark < pos[spot]:
+                    high_watermark = pos[spot]
+            self.score += high_watermark
+        self.print_score()
+
+    def print_score(self):
+        print(self.name + ',' + self.team + ',' + str(self.score), end=',')
+        print('"%s"' % ', '.join(map(str, self.position)))
 
     def str(self):
-        print(json.dumps(vars(self), indent=4, sort_keys=False))
-        # print(', '.join('{%s: '%s'}' % item for item in vars(self).items()))
+        print(json.dumps(vars(self), indent=2, sort_keys=False))
 
 
 def fantasypros_real_rater():
     response = requests.get(url='https://www.fantasypros.com/mlb/stats/hitters.php?range={}'.format('2018'))
     print('Response HTTP Status Code: {status_code}'.format(status_code=response.status_code))
     # beautiful soup parse here response.json()
-    return
+    raise NotImplementedError
+
 
 def fantasypros_2019_projection():
-    list_of_players = []
+    # list_of_players = []
     dataframe = pandas.read_csv(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/fantasypros_2019_projections.csv'))
     # print(dataframe.head())
     for index, row in dataframe.iterrows():
-        list_of_players.append(Player(row))
-    # with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/fantasypros_2019_ranks.csv'), 'w') as output:
-    #     for player in list_of_players():
-    #         player.score()
-            # output.write...
+        x = Player(row)
+
 
 def espn_real_rater():
-    return
+    '''
+    use selenium to navigate espn, login, call inner HTML to get data table
+    '''
+    raise NotImplementedError
+
 
 def espn_2019_projection():
-    browser = webdriver.Safari() #replace with .Firefox(), or with the browser of your choice
+    '''
+    use selenium webdriver to navigate espn, login, call inner HTML to get data table
+    Need to allow remote javascript execution in browser for this to work
+    '''
+    browser = webdriver.Safari()
     url = "http://fantasy.espn.com/baseball/playerrater?leagueId=200702"
     browser.get(url)
-    innerHTML = browser.execute_script("return document.Scripts.playerrater.js") #returns the inner HTML as a string
-    print(innerHTML)
+    # innerHTML = browser.execute_script("return document.Scripts.playerrater.js") #returns the inner HTML as a string
+    # print(innerHTML)
+    raise NotImplementedError
 
 
 def main():
